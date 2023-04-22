@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ActionPanel, Detail, List, Action, Icon, showToast, Toast } from "@raycast/api";
+import { ActionPanel, Detail, List, Action, Icon, showToast, Toast, Clipboard } from "@raycast/api";
 import { exec } from "child_process";
 
 const DetailPassword = ({
@@ -9,13 +9,14 @@ const DetailPassword = ({
   networkName: string;
   setIsLoading: (loading: boolean) => void;
 }) => {
-  const [text, setText] = useState("");
+  const [password, setPassword] = useState("");
 
   useEffect(() => {
     (async () => {
       const toast = await showToast({ style: Toast.Style.Animated, title: "Permission Checking" });
 
-      exec(`security find-generic-password -wa "${networkName}"`, (error, password, stderr) => {
+      setPassword("hii");
+      exec(`security find-generic-password -wa "${networkName}"`, async (error, password, stderr) => {
         if (error) {
           console.error(`exec error: ${error}`);
 
@@ -27,19 +28,33 @@ const DetailPassword = ({
           return;
         }
 
+        password = password.trim();
+        await Clipboard.copy(password);
+
         // Trigger open raycast app
         exec("open /Applications/Raycast.app", (error, stdout, stderr) => {
           toast.style = Toast.Style.Success;
           toast.title = "Got it 🥳";
 
-          setText(password.trim());
+          setPassword(password);
           setIsLoading(false);
         });
       });
     })();
   }, []);
 
-  return <Detail markdown={`${text}`} />;
+  return (
+    <Detail
+      markdown={`
+  ## Wifi Name 📶
+  ${networkName}
+  ## Password 🔑
+  ${password}
+  ## Note 📝
+  > ***It has been copied inside your clipboard***
+  `}
+    />
+  );
 };
 
 export default function Command() {
