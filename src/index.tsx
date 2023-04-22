@@ -15,31 +15,33 @@ const DetailPassword = ({
     (async () => {
       const toast = await showToast({ style: Toast.Style.Animated, title: "Permission Checking" });
 
-      setPassword("hii");
-      exec(`security find-generic-password -wa "${networkName}"`, async (error, password, stderr) => {
-        if (error) {
-          console.error(`exec error: ${error}`);
+      exec(
+        `security find-generic-password -D "AirPort network password" -a "${networkName}" -w`,
+        async (error, password, stderr) => {
+          if (error) {
+            console.error(`exec error: ${error}`);
 
-          toast.style = Toast.Style.Failure;
-          toast.title = "Checking failed 😢";
-          toast.message = error.message;
+            toast.style = Toast.Style.Failure;
+            toast.title = "Checking failed 😢";
+            toast.message = error.message;
 
-          setIsLoading(false);
-          return;
+            setIsLoading(false);
+            return;
+          }
+
+          password = password.trim();
+          await Clipboard.copy(password);
+
+          // Trigger open raycast app
+          exec("open /Applications/Raycast.app", (error, stdout, stderr) => {
+            toast.style = Toast.Style.Success;
+            toast.title = "Got it 🥳";
+
+            setPassword(password);
+            setIsLoading(false);
+          });
         }
-
-        password = password.trim();
-        await Clipboard.copy(password);
-
-        // Trigger open raycast app
-        exec("open /Applications/Raycast.app", (error, stdout, stderr) => {
-          toast.style = Toast.Style.Success;
-          toast.title = "Got it 🥳";
-
-          setPassword(password);
-          setIsLoading(false);
-        });
-      });
+      );
     })();
   }, []);
 
