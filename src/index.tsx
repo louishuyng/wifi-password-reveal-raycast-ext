@@ -9,21 +9,23 @@ const DetailPassword = ({
   networkName: string;
   setIsLoading: (loading: boolean) => void;
 }) => {
-  const [password, setPassword] = useState("");
+  const [text, setText] = useState("");
 
   useEffect(() => {
     exec(`security find-generic-password -wa ${networkName}`, (error, stdout, stderr) => {
       if (error) {
         console.error(`exec error: ${error}`);
+        setText("You didn't connect to this network yet");
         setIsLoading(false);
         return;
       }
 
-      setPassword(stdout.trim());
+      setText(stdout.trim());
+      setIsLoading(false);
     });
   }, []);
 
-  return <Detail markdown={`Password: ${password}`} />;
+  return <Detail markdown={`${text}`} />;
 };
 
 export default function Command() {
