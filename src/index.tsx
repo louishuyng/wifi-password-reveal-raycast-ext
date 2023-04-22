@@ -35,27 +35,23 @@ export default function Command() {
   useEffect(() => {
     setIsLoading(true);
 
-    exec(
-      "/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -s | sed '1d; s/^[ *]//g' | awk '{print $1}' | sort | uniq",
-      (error, stdout, stderr) => {
-        if (error) {
-          console.error(`exec error: ${error}`);
-          setIsLoading(false);
-          return;
-        }
-
-        const networkList: Array<string> = stdout
-          .trim() // remove trailing newline
-          .split("\n") // split into lines
-          .slice(1) // remove header row
-          .map((line) => line.trim().split(/\s+/)[0]); // extract the network names
-
-        if (networkList?.length > 0) {
-          setNetworks(networkList);
-        }
+    exec("/usr/sbin/networksetup -listpreferredwirelessnetworks en0", (error, stdout, stderr) => {
+      if (error) {
+        console.error(`exec error: ${error}`);
         setIsLoading(false);
+        return;
       }
-    );
+
+      const lines = stdout.trim().split("\n");
+
+      // Extract the Wi-Fi network names from the lines
+      const networks = lines.slice(1).map((line) => line.trim());
+
+      if (networks?.length > 0) {
+        setNetworks(networks);
+      }
+      setIsLoading(false);
+    });
   }, []);
 
   return (
