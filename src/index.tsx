@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ActionPanel, Detail, List, Action, Icon } from "@raycast/api";
+import { ActionPanel, Detail, List, Action, Icon, showToast, Toast } from "@raycast/api";
 import { exec } from "child_process";
 
 const DetailPassword = ({
@@ -12,17 +12,31 @@ const DetailPassword = ({
   const [text, setText] = useState("");
 
   useEffect(() => {
-    exec(`security find-generic-password -wa ${networkName}`, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`exec error: ${error}`);
-        setText("You didn't connect to this network yet");
-        setIsLoading(false);
-        return;
-      }
+    (async () => {
+      const toast = await showToast({ style: Toast.Style.Animated, title: "Permission Checking" });
 
-      setText(stdout.trim());
-      setIsLoading(false);
-    });
+      exec(`security find-generic-password -wa ${networkName}`, (error, password, stderr) => {
+        if (error) {
+          console.error(`exec error: ${error}`);
+
+          toast.style = Toast.Style.Failure;
+          toast.title = "Checking failed";
+          toast.message = error.message;
+
+          setIsLoading(false);
+          return;
+        }
+
+        // Trigger open raycast app
+        exec("open /Applications/Raycast.app", (error, stdout, stderr) => {
+          toast.style = Toast.Style.Success;
+          toast.title = "Password here";
+
+          setText(password.trim());
+          setIsLoading(false);
+        });
+      });
+    })();
   }, []);
 
   return <Detail markdown={`${text}`} />;
