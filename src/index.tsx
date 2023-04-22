@@ -20,7 +20,7 @@ const DetailPassword = ({
           console.error(`exec error: ${error}`);
 
           toast.style = Toast.Style.Failure;
-          toast.title = "Checking failed";
+          toast.title = "Checking failed 😢";
           toast.message = error.message;
 
           setIsLoading(false);
@@ -30,7 +30,7 @@ const DetailPassword = ({
         // Trigger open raycast app
         exec("open /Applications/Raycast.app", (error, stdout, stderr) => {
           toast.style = Toast.Style.Success;
-          toast.title = "Password here";
+          toast.title = "Got it 🥳";
 
           setText(password.trim());
           setIsLoading(false);
