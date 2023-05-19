@@ -15,6 +15,12 @@
       "title": "Wifi Password Reveal",
       "description": "Show All Wifi Name currently connected to our Mac Network Card",
       "mode": "view"
+    },
+    {
+      "name": "initial_setup",
+      "title": "Initial Setup",
+      "description": "Set up machine credentials to avoid users needing to repeatedly input their username and password to retrieve the Wi-Fi password each time",
+      "mode": "view"
     }
   ],
   "dependencies": {

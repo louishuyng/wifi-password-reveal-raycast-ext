@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { ActionPanel, Detail, List, Action, Icon, showToast, Toast, Clipboard } from "@raycast/api";
+import { ActionPanel, Detail, List, Action, Icon, showToast, Toast, LocalStorage } from "@raycast/api";
 import { exec } from "child_process";
+import InitialSetup from "./initial_setup";
 
 const DetailPassword = ({
   networkName,
@@ -17,7 +18,7 @@ const DetailPassword = ({
 
       exec(
         `security find-generic-password -D "AirPort network password" -a "${networkName}" -w`,
-        async (error, password, stderr) => {
+        async (error, password) => {
           if (error) {
             console.error(`exec error: ${error}`);
 
@@ -30,9 +31,9 @@ const DetailPassword = ({
           }
 
           // Trigger open raycast app
-          exec("open /Applications/Raycast.app", (error, stdout, stderr) => {
+          exec("open /Applications/Raycast.app", () => {
             toast.style = Toast.Style.Success;
-            toast.title = "Permission checked successed ✅";
+            toast.title = "Permission checked successes ✅";
 
             setPassword(password.trim());
             setIsLoading(false);
@@ -61,12 +62,29 @@ const DetailPassword = ({
 
 export default function Command() {
   const [networks, setNetworks] = useState<Array<string>>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [askedInitialSetting, setAskedInitialSetting] = useState<boolean | undefined>(undefined);
 
   useEffect(() => {
-    setIsLoading(true);
+    (async () => {
+      setIsLoading(true);
+      const askedInitialSetting = await LocalStorage.getItem<number>("askedInitialSetting");
 
-    exec("/usr/sbin/networksetup -listpreferredwirelessnetworks en0", (error, stdout, stderr) => {
+      if (askedInitialSetting === 1) {
+        setAskedInitialSetting(true);
+      } else {
+        setAskedInitialSetting(false);
+        setIsLoading(false);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!askedInitialSetting) {
+      return;
+    }
+
+    exec("/usr/sbin/networksetup -listpreferredwirelessnetworks en0", (error, stdout) => {
       if (error) {
         console.error(`exec error: ${error}`);
         setIsLoading(false);
@@ -83,25 +101,41 @@ export default function Command() {
       }
       setIsLoading(false);
     });
-  }, []);
+  }, [askedInitialSetting]);
 
   return (
-    <List isLoading={isLoading}>
-      {networks.map((network, index) => (
-        <List.Item
-          key={index}
-          icon={Icon.Wifi}
-          title={network}
-          actions={
-            <ActionPanel>
-              <Action.Push
-                title="Show Details"
-                target={<DetailPassword networkName={network} setIsLoading={setIsLoading} />}
-              />
-            </ActionPanel>
-          }
-        />
-      ))}
-    </List>
+    <>
+      <List isLoading={isLoading}>
+        {networks.map((network, index) => (
+          <List.Item
+            key={index}
+            icon={Icon.Wifi}
+            title={network}
+            actions={
+              <ActionPanel>
+                <Action.Push
+                  title="Show Details"
+                  target={<DetailPassword networkName={network} setIsLoading={setIsLoading} />}
+                />
+                <Action.Push
+                  title="Initial Setup Credential"
+                  target={
+                    <InitialSetup
+                      isAbleToPop={true}
+                      setAskedInitialSetting={setAskedInitialSetting}
+                      showHUDAfterPop={false}
+                    />
+                  }
+                />
+              </ActionPanel>
+            }
+          />
+        ))}
+      </List>
+
+      {!askedInitialSetting && !isLoading && (
+        <InitialSetup isAbleToPop={false} setAskedInitialSetting={setAskedInitialSetting} />
+      )}
+    </>
   );
 }
